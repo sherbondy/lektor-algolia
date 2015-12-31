@@ -27,9 +27,13 @@ class AlgoliaPlugin(Plugin):
             from lektor.publisher import publishers
             publishers['algolia'] = AlgoliaPublisher
 
+def is_public_field(field):
+    # ignore system fields and the indexed boolean
+    name = field['name']
+    return name[0] != '_' and name != "indexed"
 
 def public_field_names(model_fields):
-    return [field['name'] for field in model_fields if field['name'][0] != '_']
+    return [field['name'] for field in model_fields if is_public_field(field)]
 
 def stringify(record, field_name):
     val = record[field_name]
@@ -39,6 +43,9 @@ def stringify(record, field_name):
 
 def hit_object_ids(search_page):
     return set([hit["objectID"] for hit in search_page['hits']])
+
+def is_indexable(record):
+    return 'indexed' in record and record['indexed'] == True
 
 class AlgoliaPublisher(Publisher):
     def __init__(self, env, output_path):
@@ -81,12 +88,14 @@ class AlgoliaPublisher(Publisher):
     def add_index_children_json(self, pad, record):
         record_json = []
         for child in record.children.all():
-            if not child.is_hidden and 'indexed' in child and child['indexed'] == True:
+            if is_indexable(child):
                 model = child.datamodel
                 model_json = model.to_json(pad, child)
                 model_field_names = public_field_names(model_json['fields'])
                 child_data = {field_name: stringify(child, field_name) for field_name in model_field_names}
                 child_data['objectID'] = child['_gid']
+                # upload path so we can send the user to the right url for a search query!
+                child_data['_path'] = child['_path']
                 record_json.append(child_data)
             record_json += self.add_index_children_json(pad, child)
         return record_json
@@ -137,17 +146,17 @@ Please create the index / verify your credentials on their website.'
             local_keys = set([record['objectID'] for record in local])
             remote = self.list_remote()
 
-            yield "Found %d local records to index" % len(local)
-            yield "Found %d existing remote records in the index" % len(remote)
+            yield "Found %d local records to index." % len(local)
+            yield "Found %d existing remote records in the index." % len(remote)
 
-            yield "Computing diff for index update"
+            yield "Computing diff for index update..."
             diff = self.compute_diff(local_keys, remote)
             res_delete = self.index.delete_objects(list(diff['delete']))
-            yield "Deleted %d stale records from remote index" % len(res_delete)
+            yield "Deleted %d stale records from remote index." % len(res_delete)
 
             res_add = self.index.save_objects(local)
             yield "Finished submitting %d new records to the index." % len(res_add)
-            yield "This operation is asynchronous, so Aloglia may take a while to reflect the updates."
+            yield "Processing the updated index is asynchronous, so Aloglia may take a while to reflect the changes."
 
         else:
             yield 'Could not connect to Algolia.'
