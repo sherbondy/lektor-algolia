@@ -29,32 +29,39 @@ target = algolia://books
 ```
 
 Now, if you call `lektor deploy algolia`, Lektor will automatically generate
-search indexes *but only for discoverable data models that have a boolean field `indexed`
-set to `true`*.
+search indexes *but only for discoverable data models that have a boolean field named `indexed`
+that is set to `true`*.
 
 **Important:** the index must already exist. lektor-algolia won't
-automatically create the index bucket for you. Algolia has a [quick start guide](https://www.algolia.com/doc/tutorials/getting-started-realtime-search)
+automatically create the index for you. Algolia has a [quick start guide](https://www.algolia.com/doc/tutorials/getting-started-realtime-search)
 for how to set up your Algolia account and create an index. We recommend making
 an API key that only has access to this specific index.
 
 ## Credentials ##
 
 You need to prove to Algolia that you have permission to upload to the
-index you've chosen. To do this, create a `configs/algolia.ini` file like so:
+index you've chosen. To do this, create a `configs/algolia.ini` file in your project root that looks like this:
 
 ```
 api_key = <YOUR-API-KEY>
 app_id = <YOUR-APP-ID>
 ```
 
-lektor-algolia uses Algolia's official Python rest API.
-
 ## Contributing ##
 
 Pull requests are super useful and encouraged! Once accepted, changes
 are published using lektor with `lektor dev publish-plugin`.
 
+Low hanging fruit:
+
+- No intelligent diffing is done right now to see if models have actually been updated (we delete removed models, but resync existing models every time).
+- Deploys probably fail for models with certain data types, because the way I am serializing record values is very naive.
+- Could do more slick things with configuring what should be indexed where. Could support multiple indexes in one site,
+  and mappings could be provided via config rather than the existence of an `indexed` property on models.
+- Needs to be much more robust... Should find out what the maximum number of object IDs we can actually pull per request is...
+- Why let Algolia have all of the fun? It'd be super slick to generate and serialize a client-side index data structure that can be stored on the site and queried via JavaScript.
+
 ## Thanks ##
 
-I basically copy-pasta'd lektor-s3 to get started with writing this plugin.
+I basically copy-pasta'd [lektor-s3](https://github.com/spenczar/lektor-s3) to get started with writing this plugin.
 [Check out this awesome guide for making custom Lektor publishers](http://spenczar.com/posts/2015/Dec/24/lektor-publisher-plugin/).
