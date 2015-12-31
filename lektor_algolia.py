@@ -102,58 +102,6 @@ class AlgoliaPublisher(Publisher):
         all_records = self.add_index_children_json(pad, root)
         return all_records
 
-    def file_md5(self, filename):
-        '''Compute the md5 checksum for a file.'''
-        md5sum = md5()
-        with open(filename, 'rb') as f:
-            data = f.read(8192)
-            while len(data) > 0:
-                md5sum.update(data)
-                data = f.read(8192)
-        return md5sum.hexdigest()
-
-    def obj_md5(self, obj):
-        """Compute the md5 checksum for an S3 object.
-
-        MD5s can be stored in the 'ETag' field of S3 objects. The
-        field doesn't store the MD5 in two cases: objects uploaded
-        with Multipart Upload and objects encrypted with SSE-C or
-        SSE-KMS. In those cases, we'll just return an empty string.
-
-        """
-
-        # Multipart-uploaded messages have etags that look like 'xxx-nnn'
-        if '-' in obj.e_tag:
-            return ''
-
-        # SSE-C and SSE-KMS-encrypted objects have a few values set
-        # when you call HeadObject on them
-        obj_meta = self.s3.meta.client.head_object(
-            Bucket=obj.bucket_name,
-            Key=obj.key,
-        )
-        if obj_meta.get('SSECustomerAlgorithm') is not None:
-            return ''
-        if obj_meta.get('ServerSideEncryption') == 'aws:kms':
-            return ''
-
-        # Else, the etag stores an md5 checksum enclosed in double quotes
-        return obj.e_tag.strip('"')
-
-    def different(self, local_filename, remote_obj):
-        """Return true if the local file is different than the remote object."""
-        abs_filename = os.path.join(self.output_path, local_filename)
-        # Check size first.
-        if remote_obj.size != os.path.getsize(abs_filename):
-            return True
-
-        # check md5
-        if self.file_md5(abs_filename) != self.obj_md5(remote_obj):
-            return True
-
-        # they're the same
-        return False
-
     def compute_diff(self, local_keys, remote_keys):
         """Compute the changeset for updating remote to match local"""
         diff = {
@@ -163,26 +111,6 @@ class AlgoliaPublisher(Publisher):
         diff['delete'] = remote_keys.difference(local_keys)
         diff['add'] = local_keys
         return diff
-
-    def add(self, filename):
-        abs_filename = os.path.join(self.output_path, filename)
-        key = self.key_prefix + filename
-
-        mime, _ = mimetypes.guess_type(filename)
-        if mime is None:
-            mime = "text/plain"
-        self.bucket.upload_file(abs_filename, key, ExtraArgs={'ContentType': mime})
-
-    def update(self, filename):
-        # Updates are just overwrites in S3
-        self.add(filename)
-
-    def delete_batch(self, filenames):
-        if len(filenames) == 0:
-            return
-        self.bucket.delete_objects(
-            Delete={'Objects': [{'Key': self.key_prefix + f} for f in filenames]}
-        )
 
     def connect(self, credentials):
         self.algolia = algoliasearch.Client(
@@ -216,15 +144,6 @@ class AlgoliaPublisher(Publisher):
             print remote
 
             diff = self.compute_diff(local_keys, remote)
-            # We will not distinguish between add and update, just add and delete.
-            # for f in diff['add']:
-            #     yield 'adding %s' % f
-            #     self.add(f)
-            #
-            #
-            # for f in diff['delete']:
-            #     yield 'deleting %s' % f
-            # self.delete_batch(diff['delete'])
             res_delete = self.index.delete_objects(list(diff['delete']))
             print "Deletion result:"
             print res_delete
