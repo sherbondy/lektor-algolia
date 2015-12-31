@@ -59,6 +59,9 @@ Low hanging fruit:
 - Could do more slick things with configuring what should be indexed where. Could support multiple indexes in one site,
   and mappings could be provided via config rather than the existence of an `indexed` property on models.
 - Needs to be much more robust... Should find out what the maximum number of object IDs we can actually pull per request is...
+
+High hanging fruit:
+
 - Why let Algolia have all of the fun? It'd be super slick to generate and serialize a client-side index data structure that can be stored on the site and queried via JavaScript.
 
 ## Thanks ##
