@@ -59,6 +59,7 @@ Low hanging fruit:
 - Could do more slick things with configuring what should be indexed where. Could support multiple indexes in one site,
   and mappings could be provided via config rather than the existence of an `indexed` property on models.
 - Needs to be much more robust... Should find out what the maximum number of object IDs we can actually pull per request is...
+- Tests. Lots and lots of tests. Setup CI server with throway algolia index...
 
 High hanging fruit:
 
