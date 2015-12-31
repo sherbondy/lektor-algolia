@@ -10,6 +10,8 @@ lektor plugins add lektor-algolia
 ```
 You should see a message saying lektor-algolia has been added to the project.
 
+[Here's a link to the project on pypi](https://pypi.python.org/pypi/lektor-algolia) if you want to install through unconventional means.
+
 Next, add an index and an API key with write access to that index to your
 Algolia account via their website. Then, in your project file
 (like `blog.lektorproject`), add the following:
@@ -51,6 +53,9 @@ app_id = <YOUR-APP-ID>
 
 Pull requests are super useful and encouraged! Once accepted, changes
 are published using lektor with `lektor dev publish-plugin`.
+
+If you want to hack on the plugin and test it with a lektor project, you can clone this repo or symlink it into the folder `packages/lektor-algolia`
+in your project.
 
 Low hanging fruit:
 
