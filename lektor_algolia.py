@@ -3,7 +3,7 @@ import mimetypes
 import os
 from hashlib import md5
 
-from lektor.publisher import Publisher
+from lektor.publisher import Publisher, PublishError
 from lektor.pluginsystem import Plugin
 from lektor.project import Project
 from lektor.types.formats import Markdown
@@ -56,7 +56,6 @@ class AlgoliaPublisher(Publisher):
         exists = True
         try:
             settings = self.index.get_settings()
-            print(settings)
         except algoliasearch.AlgoliaException as e:
             print e
             exists = False
@@ -88,7 +87,6 @@ class AlgoliaPublisher(Publisher):
                 model_field_names = public_field_names(model_json['fields'])
                 child_data = {field_name: stringify(child, field_name) for field_name in model_field_names}
                 child_data['objectID'] = child['_gid']
-                print(child_data)
                 record_json.append(child_data)
             record_json += self.add_index_children_json(pad, child)
         return record_json
@@ -120,7 +118,7 @@ class AlgoliaPublisher(Publisher):
     def publish(self, target_url, credentials=None):
         credentials = self.env.algolia_credentials
 
-        yield "credentials: {}".format(credentials)
+        yield "Checking for Algolia credentials and index..."
         if 'app_id' in credentials and 'api_key' in credentials:
             self.connect(credentials)
 
@@ -128,29 +126,28 @@ class AlgoliaPublisher(Publisher):
             self.index = self.algolia.init_index(self.index_name)
             if not self.verify_index_exists():
                 raise PublishError(
-                    'Algolia index "%s" does not exist, or the API key provided does not have access to it. \
-                    Please create the index / verify your credentials on their website.'
-                    % bucket_uri
+'Algolia index "%s" does not exist, or the API key provided does not have access to it. \
+Please create the index / verify your credentials on their website.'
+% self.index_name
                 )
+
+            yield "Verified Algolia index exists and is accessible via your credentials."
 
             local = self.list_local()
             local_keys = set([record['objectID'] for record in local])
             remote = self.list_remote()
 
-            yield "listing local files to index in algolia..."
-            for record in local:
-                print record
-            yield "printing remote files"
-            print remote
+            yield "Found %d local records to index" % len(local)
+            yield "Found %d existing remote records in the index" % len(remote)
 
+            yield "Computing diff for index update"
             diff = self.compute_diff(local_keys, remote)
             res_delete = self.index.delete_objects(list(diff['delete']))
-            print "Deletion result:"
-            print res_delete
+            yield "Deleted %d stale records from remote index" % len(res_delete)
 
             res_add = self.index.save_objects(local)
-            print "Add result:"
-            print res_add
+            yield "Finished submitting %d new records to the index." % len(res_add)
+            yield "This operation is asynchronous, so Aloglia may take a while to reflect the updates."
 
         else:
             yield 'Could not connect to Algolia.'
