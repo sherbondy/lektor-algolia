@@ -31,8 +31,12 @@ target = algolia://books
 ```
 
 Now, if you call `lektor deploy algolia`, Lektor will automatically generate
-search indexes *but only for discoverable data models that have a boolean field named `indexed`
-that is set to `true`*.
+search indexes **but only for discoverable data models that have a boolean field named `indexed`
+that is set to `true`**.
+
+We recommending using `url_style = absolute` in your project configuration if
+you are planning on linking readers to your actual content pages via the search
+bar, since relative urls would not be particularly helpful for a global site search.
 
 **Important:** the index must already exist. lektor-algolia won't
 automatically create the index for you. Algolia has a [quick start guide](https://www.algolia.com/doc/tutorials/getting-started-realtime-search)
