@@ -52,9 +52,18 @@ You need to prove to Algolia that you have permission to upload to the
 index you've chosen. To do this, create a `configs/algolia.ini` file in your project root that looks like this:
 
 ```
-api_key = <YOUR-API-KEY>
 app_id = <YOUR-APP-ID>
+api_key = <YOUR-API-KEY>
 ```
+
+If you are managing your project via git, make sure to `.gitignore` those credentials :).
+Or, alternatively, you can pass credentials via the command line while deploying:
+
+```
+lektor deploy <YOUR-INDEX> --username <YOUR-APP-ID> --key <YOUR-API-KEY>
+```
+
+Note that `--key` and `--password` are interchangeable for providing credentials.
 
 ## Contributing ##
 

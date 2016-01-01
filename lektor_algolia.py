@@ -47,6 +47,19 @@ def hit_object_ids(search_page):
 def is_indexable(record):
     return 'indexed' in record and record['indexed'] == True
 
+def merge_credentials(config_creds, cli_creds):
+    """merge config file credentials with command line credentials."""
+    merged_creds = config_creds
+    # do this second to prefer cli creds over config file
+    if cli_creds:
+        if cli_creds['username']:
+            merged_creds['app_id'] = cli_creds['username']
+        if cli_creds['password']:
+            merged_creds['api_key'] = cli_creds['password']
+        if cli_creds['key']:
+            merged_creds['api_key'] = cli_creds['key']
+    return merged_creds
+
 class AlgoliaPublisher(Publisher):
     def __init__(self, env, output_path):
         super(AlgoliaPublisher, self).__init__(env, output_path)
@@ -125,11 +138,11 @@ class AlgoliaPublisher(Publisher):
         )
 
     def publish(self, target_url, credentials=None):
-        credentials = self.env.algolia_credentials
+        merged_creds = merge_credentials(self.env.algolia_credentials, credentials)
 
         yield "Checking for Algolia credentials and index..."
-        if 'app_id' in credentials and 'api_key' in credentials:
-            self.connect(credentials)
+        if 'app_id' in merged_creds and 'api_key' in merged_creds:
+            self.connect(merged_creds)
 
             self.index_name = self.split_index_uri(target_url)
             self.index = self.algolia.init_index(self.index_name)
