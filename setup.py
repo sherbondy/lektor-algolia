@@ -3,7 +3,7 @@ from setuptools import setup
 setup(
     name='lektor-algolia',
     description='Lektor plugin to support generating an Algolia search index from your data',
-    version='0.0.2',
+    version='0.0.3',
     author=u'Ethan Sherbondy',
     author_email='sherbondye@gmail.com',
     url='https://github.com/sherbondy/lektor-algolia',

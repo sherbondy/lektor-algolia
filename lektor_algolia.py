@@ -39,7 +39,7 @@ def stringify(record, field_name):
     val = record[field_name]
     if isinstance(val, Markdown):
         return val.source
-    return str(val)
+    return unicode(val).encode('utf8')
 
 def hit_object_ids(search_page):
     return set([hit["objectID"] for hit in search_page['hits']])
@@ -165,10 +165,12 @@ Please create the index / verify your credentials on their website.'
             yield "Computing diff for index update..."
             diff = self.compute_diff(local_keys, remote)
             res_delete = self.index.delete_objects(list(diff['delete']))
-            yield "Deleted %d stale records from remote index." % len(res_delete)
+            delete_count = len(res_delete['objectIDs'])
+            yield "Deleted %d stale records from remote index." % delete_count
 
             res_add = self.index.save_objects(local)
-            yield "Finished submitting %d new records to the index." % len(res_add)
+            add_count = len(res_add['objectIDs'])
+            yield "Finished submitting %d new/updated records to the index." % add_count
             yield "Processing the updated index is asynchronous, so Aloglia may take a while to reflect the changes."
 
         else:
