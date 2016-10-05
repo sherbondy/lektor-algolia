@@ -137,7 +137,7 @@ class AlgoliaPublisher(Publisher):
             credentials['app_id'], credentials['api_key']
         )
 
-    def publish(self, target_url, credentials=None):
+    def publish(self, target_url, credentials=None, **extra):
         merged_creds = merge_credentials(self.env.algolia_credentials, credentials)
 
         yield "Checking for Algolia credentials and index..."
